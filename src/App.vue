@@ -1,17 +1,39 @@
 <template>
   <div id="app">
     <img src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <Question v-bind:question="currentQuestion"/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import Pusher from 'pusher-js';
+import Question from './components/Question.vue'
+
+// Enable pusher logging - don't include this in production
+Pusher.logToConsole = true;
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
+    Question
+  },
+  data: function() {
+    return {
+      currentQuestion: null
+    }
+  },
+  created: function() {
+    this.pusher = new Pusher(process.env.VUE_APP_PUSHER_API_KEY, {
+      cluster: process.env.VUE_APP_PUSHER_CLUSTER,
+      encrypted: true
+    })
+
+    this.channel = this.pusher.subscribe('questions');
+
+    this.channel.bind('ask-question', data => {
+      this.currentQuestion = data
+      console.log(data)
+    })
   }
 }
 </script>
