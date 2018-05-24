@@ -1,13 +1,18 @@
 <template>
   <div id="app">
     <img src="./assets/logo.png">
-    <Question v-bind:question="currentQuestion"/>
+    <Question v-if="gameJoined" 
+              v-bind:question="currentQuestion"/>
+    <JoinGame v-else
+              v-bind:gameCode="gameCode"
+              v-on:join-game="joinGame"/>
   </div>
 </template>
 
 <script>
 import Pusher from 'pusher-js';
 import Question from './components/Question.vue'
+import JoinGame from './components/JoinGame.vue'
 
 // Enable pusher logging - don't include this in production
 Pusher.logToConsole = true;
@@ -15,11 +20,14 @@ Pusher.logToConsole = true;
 export default {
   name: 'app',
   components: {
-    Question
+    Question,
+    JoinGame
   },
   data: function() {
     return {
-      currentQuestion: null
+      currentQuestion: null,
+      gameJoined: false,
+      gameCode: null
     }
   },
   created: function() {
@@ -27,13 +35,21 @@ export default {
       cluster: process.env.VUE_APP_PUSHER_CLUSTER,
       encrypted: true
     })
+  },
+  methods: {
+    joinGame: function(gameCode) {
+      console.log("Attempting to join game " + gameCode)
 
-    this.channel = this.pusher.subscribe('questions');
+      // This should only trigger when a game code is entered
+      this.channel = this.pusher.subscribe('game-' + gameCode)
 
-    this.channel.bind('ask-question', data => {
-      this.currentQuestion = data
-      console.log(data)
-    })
+      this.channel.bind('ask-question', data => {
+        this.currentQuestion = data
+        console.log(data)
+      })
+
+      this.gameJoined = true
+    }
   }
 }
 </script>
